@@ -32,7 +32,13 @@ require('lazy').setup({
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
-
+  {
+    'akinsho/toggleterm.nvim',
+    opts = {
+      direction = 'float',
+      hidden = true,
+    }
+  },
 
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
@@ -68,7 +74,7 @@ require('lazy').setup({
       'rafamadriz/friendly-snippets',
     },
   },
-  { 'm4xshen/autoclose.nvim', opts = {}, enabled = false },
+  { 'm4xshen/autoclose.nvim', opts = {} },
 
   -- Useful plugin to show you pending keybinds.
   { 'folke/which-key.nvim',   opts = {} },
@@ -233,6 +239,10 @@ vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 -- Remap for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+-- Toggle terminal
+vim.keymap.set({ 'n', 't', 'v' }, '<c-/>', '<Cmd>ToggleTerm<CR>', { desc = 'Toggle Terminal' })
+vim.keymap.set({ 'n', 't', 'v' }, '<c-_>', '<Cmd>ToggleTerm<CR>', { desc = 'which_key_ignore' })
 
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
