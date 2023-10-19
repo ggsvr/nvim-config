@@ -30,13 +30,20 @@ require('lazy').setup({
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
 
+
   -- Detect tabstop and shiftwidth automatically
-  'tpope/vim-sleuth',
+  --  'tpope/vim-sleuth',
   {
     'akinsho/toggleterm.nvim',
     opts = {
       direction = 'float',
       hidden = true,
+    }
+  },
+  {
+    'norcalli/nvim-colorizer.lua',
+    opts = {
+      'css',
     }
   },
 
@@ -74,10 +81,18 @@ require('lazy').setup({
       'rafamadriz/friendly-snippets',
     },
   },
-  { 'm4xshen/autoclose.nvim', opts = {} },
+  {
+    'ray-x/lsp_signature.nvim',
+    opts = {}
+  },
+  {
+    'windwp/nvim-autopairs',
+    event = "InsertEnter",
+    opts = {}
+  },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim',   opts = {} },
+  { 'folke/which-key.nvim', opts = {} },
   {
     'nvim-tree/nvim-tree.lua',
     lazy = false,
@@ -240,6 +255,18 @@ vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
+-- Window Movement
+
+vim.keymap.set('n', '<c-l>', '<c-w>l')
+vim.keymap.set('n', '<c-h>', '<c-w>h')
+vim.keymap.set('n', '<c-k>', '<c-w>k')
+vim.keymap.set('n', '<c-j>', '<c-w>j')
+
+vim.keymap.set('n', '<c-Right>', '<c-w>>')
+vim.keymap.set('n', '<c-Left>', '<c-w><')
+vim.keymap.set('n', '<c-Up>', '<c-w>+')
+vim.keymap.set('n', '<c-Down>', '<c-w>-')
+
 -- Toggle terminal
 vim.keymap.set({ 'n', 't', 'v' }, '<c-/>', '<Cmd>ToggleTerm<CR>', { desc = 'Toggle Terminal' })
 vim.keymap.set({ 'n', 't', 'v' }, '<c-_>', '<Cmd>ToggleTerm<CR>', { desc = 'which_key_ignore' })
@@ -295,7 +322,8 @@ vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = 
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim' },
+  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim',
+    'gdscript' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -418,6 +446,7 @@ end
 --  define the property 'filetypes' to the map in question.
 local servers = {
   clangd = {},
+  cssls = {},
   -- gopls = {},
   -- pyright = {},
   rust_analyzer = {},
@@ -430,6 +459,7 @@ local servers = {
       telemetry = { enable = false },
     },
   },
+  gdscript = {},
 }
 
 -- Setup neovim lua configuration
@@ -439,23 +469,34 @@ require('neodev').setup()
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
+for server_name, server in pairs(servers) do
+  require('lspconfig')[server_name].setup {
+    capabilities = capabilities,
+    on_attach = on_attach,
+    settings = server,
+    filetypes = server.filetypes,
+  }
+end
+
 -- Ensure the servers above are installed
 local mason_lspconfig = require 'mason-lspconfig'
 
 mason_lspconfig.setup {
-  ensure_installed = vim.tbl_keys(servers),
+  automatic_installation = { exclude = { "gdscript" } }
+  -- ensure_installed = vim.tbl_keys(servers),
 }
 
-mason_lspconfig.setup_handlers {
-  function(server_name)
-    require('lspconfig')[server_name].setup {
-      capabilities = capabilities,
-      on_attach = on_attach,
-      settings = servers[server_name],
-      filetypes = (servers[server_name] or {}).filetypes,
-    }
-  end
-}
+
+--mason_lspconfig.setup_handlers {
+--  function(server_name)
+--    require('lspconfig')[server_name].setup {
+--      capabilities = capabilities,
+--      on_attach = on_attach,
+--      settings = servers[server_name],
+--      filetypes = (servers[server_name] or {}).filetypes,
+--    }
+--  end
+--}
 
 -- [[ Configure nvim-cmp ]]
 -- See `:help cmp`
@@ -504,3 +545,34 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
+
+--local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+--local ap_handlers = require('nvim-autopairs.completion.handlers')
+--
+--cmp.event:on(
+--  'confirm_done',
+--  cmp_autopairs.on_confirm_done({
+--    filetypes = {
+--      ["*"] = {
+--        ["("] = {
+--          kind = {
+--            cmp.lsp.CompletionItemKind.Function,
+--            cmp.lsp.CompletionItemKind.Method
+--          },
+--          handler = ap_handlers["*"]
+--        }
+--      }
+--    }
+--  })
+--)
+
+
+-- set tab size to 4 spaces for certain languages
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "*.rs", "*.js" },
+  callback = function()
+    vim.o.tabstop = 2
+    vim.o.softtabstop = 2
+    vim.o.shiftwidth = 2
+  end
+})
